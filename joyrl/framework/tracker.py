@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-04-28 16:16:04
 LastEditor: JiangJi
-LastEditTime: 2023-12-02 17:34:55
+LastEditTime: 2023-12-02 23:29:10
 Discription: 
 '''
 from joyrl.framework.message import Msg, MsgType
@@ -17,7 +17,6 @@ class Tracker(Moduler):
     '''
     def __init__(self, cfg: MergedConfig, *args, **kwargs) -> None:
         super().__init__(cfg, *args, **kwargs)
-        self._init_tracker(cfg)
         self.global_episode = 0 # current global episode
         self.global_sample_count = 0 # global sample count
         self.global_update_step = 0 # global update step

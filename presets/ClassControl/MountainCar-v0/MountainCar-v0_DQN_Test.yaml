@@ -17,7 +17,7 @@ general_cfg:
   train_eps: 200
   wrapper: null
   render_mode: rgb_array
-  n_workers: 1
+  n_interactors: 1
 algo_cfg:
   batch_size: 64
   buffer_size: 40000

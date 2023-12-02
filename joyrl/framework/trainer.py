@@ -3,7 +3,6 @@ import ray
 from joyrl.framework.message import Msg, MsgType
 from joyrl.framework.config import MergedConfig
 
-@ray.remote(num_cpus = 0)
 class Trainer:
     def __init__(self, cfg : MergedConfig, *args, **kwargs) -> None:
         self.cfg = cfg
@@ -17,6 +16,34 @@ class Trainer:
         self.logger = kwargs['logger']
 
     def run(self):
+        self.model_mgr.init()
+        self.recorder.init()
+        self.collector.init()
+        self.interactor_mgr.init(
+            model_mgr = self.model_mgr,
+            tracker = self.tracker,
+            collector = self.collector,
+            recorder = self.recorder,
+            logger = self.logger
+        )
+        self.learner_mgr.init(
+            model_mgr = self.model_mgr,
+            tracker = self.tracker,
+            collector = self.collector,
+            recorder = self.recorder,
+            logger = self.logger
+        )
+        self.logger.info(f"[Trainer.run] Start {self.cfg.mode}ing!") # print info
+        s_t = time.time()
+        while True:
+            self.interactor_mgr.run()
+            self.learner_mgr.run()
+            if self.tracker.pub_msg(Msg(type = MsgType.TRACKER_CHECK_TASK_END)):
+                e_t = time.time()
+                self.logger.info(f"[Trainer.run] Finish {self.cfg.mode}ing! Time cost: {e_t - s_t:.3f} s")
+                break
+
+    def ray_run(self):
         # self.online_tester.run.remote()
         self.model_mgr.run.remote()
         self.recorder.run.remote()

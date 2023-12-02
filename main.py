@@ -28,7 +28,6 @@ class Main(object):
         self._config_dirs()  # create dirs
         self._save_cfgs({'general_cfg': self.general_cfg, 'algo_cfg': self.algo_cfg, 'env_cfg': self.env_cfg})
         all_seed(seed=self.general_cfg.seed)  # set seed == 0 means no seed
-        self.check_sample_length(self.cfg) # check onpolicy sample length
         
     def print_cfgs(self, logger = None):
         ''' print parameters
@@ -155,34 +154,6 @@ class Main(object):
         data_handler = data_handler_mod.DataHandler(cfg)
         return policy, data_handler
 
-    def check_sample_length(self,cfg):
-        ''' check  sample length
-        '''
-        onpolicy_flag = False
-        onpolicy_batch_size_flag = False
-        onpolicy_batch_episode_flag = False
-        if not hasattr(cfg, 'batch_size'):
-            setattr(self.cfg, 'batch_size', -1)
-        if not hasattr(cfg, 'batch_episode'):
-            setattr(self.cfg, 'batch_episode', -1)
-        if cfg.buffer_type.lower().startswith('onpolicy'): # on policy
-            onpolicy_flag = True
-            if cfg.batch_size > 0 and cfg.batch_episode > 0:
-                onpolicy_batch_episode_flag = True
-            elif cfg.batch_size > 0:
-                onpolicy_batch_size_flag = True
-            elif cfg.batch_episode > 0:
-                onpolicy_batch_episode_flag = True
-            else:
-                raise ValueError("the parameter 'batch_size' or 'batch_episode' must >0 when using onpolicy buffer!")
-        if onpolicy_flag:
-            n_sample_steps = cfg.batch_size if onpolicy_batch_size_flag else float("inf")
-        else:
-            n_sample_steps = 1 # 1 for offpolicy  
-        n_sample_episodes = cfg.batch_episode if onpolicy_batch_episode_flag else float("inf") # inf for offpolicy
-        setattr(self.cfg, 'onpolicy_flag', onpolicy_flag)
-        setattr(self.cfg, 'n_sample_steps', n_sample_steps)
-        setattr(self.cfg, 'n_sample_episodes', n_sample_episodes)
     
     def _start(self, **kwargs):
         ''' start serial training
@@ -192,19 +163,27 @@ class Main(object):
         logger = Logger(self.cfg)
         recorder = Recorder(self.cfg, logger = logger)
         online_tester = OnlineTester(self.cfg, env = env, policy = policy, logger = logger)
-        collector = Collector(self.cfg, data_handler = data_handler)
-        interactor_mgr = InteractorMgr(self.cfg, env = env, policy = policy)
-        learner_mgr = LearnerMgr(self.cfg, policy = policy)
+        collector = Collector(self.cfg, data_handler = data_handler, logger = logger)
+        interactor_mgr = InteractorMgr(self.cfg, 
+                                        env = env, 
+                                        policy = policy,
+                                        logger = logger
+                                    )
+        learner_mgr = LearnerMgr(self.cfg, 
+                                policy = policy,
+                                logger = logger
+                            )
         model_mgr = ModelMgr(self.cfg, model_params = policy.get_model_params(),logger = logger)
-        trainer = Trainer(self.cfg,
-                                tracker = tracker,
-                                model_mgr = model_mgr,
-                                collector = collector,
-                                interactor_mgr = interactor_mgr,
-                                learner_mgr = learner_mgr,
-                                online_tester = online_tester,
-                                recorder = recorder,
-                                logger = logger)
+        trainer = Trainer(  self.cfg,
+                            tracker = tracker,
+                            model_mgr = model_mgr,
+                            collector = collector,
+                            interactor_mgr = interactor_mgr,
+                            learner_mgr = learner_mgr,
+                            online_tester = online_tester,
+                            recorder = recorder,
+                            logger = logger
+                        )
         trainer.run()
 
     def _ray_start(self, **kwargs):

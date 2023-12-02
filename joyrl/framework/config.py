@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+# coding=utf-8
+'''
+Author: JiangJi
+Email: johnjim0816@gmail.com
+Date: 2023-12-02 15:30:09
+LastEditor: JiangJi
+LastEditTime: 2023-12-02 21:10:53
+Discription: 
+'''
 class DefaultConfig:
     ''' Default parameters for running
     '''
@@ -33,7 +43,7 @@ class GeneralConfig():
         self.collect_traj = False # if collect trajectory or not
         # multiprocessing settings
         self.mp_backend = "dummy" # multiprocessing backend: "ray", default "single"
-        self.n_workers = 1 # number of workers
+        self.n_interactors = 1 # number of workers
         self.n_learners = 1 # number of learners if using multi-processing, default 1
         self.share_buffer = True # if all learners share the same buffer
         # online evaluation settings

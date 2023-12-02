@@ -5,7 +5,7 @@ general_cfg:
   mode: test # run mode: train, test
   collect_traj: false # if collect trajectories or not
   mp_backend: single # multi-processing mode: single(default), ray
-  n_workers: 2 # number of workers if using multi-processing, default 1
+  n_interactors: 2 # number of workers if using multi-processing, default 1
   load_checkpoint: true # if load checkpoint or not
   load_path: Train_CartPole-v1_A2C_20230623-223515 # if load checkpoint, then config path in 'tasks' dir
   load_model_step: best # load model step

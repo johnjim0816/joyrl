@@ -1,25 +1,45 @@
-
+#!/usr/bin/env python
+# coding=utf-8
+'''
+Author: JiangJi
+Email: johnjim0816@gmail.com
+Date: 2023-12-02 15:02:30
+LastEditor: JiangJi
+LastEditTime: 2023-12-02 23:19:01
+Discription: 
+'''
 import time
 import ray
+from ray.util.queue import Queue as RayQueue
 import threading
 import torch
 from typing import Dict, List
-from queue import Queue
+from multiprocessing import Queue
 from joyrl.framework.message import Msg, MsgType
 from joyrl.algos.base.policies import BasePolicy
+from joyrl.framework.config import MergedConfig
+from joyrl.framework.base import Moduler
 
-@ray.remote(num_cpus=0)
-class ModelMgr:
-    def __init__(self, cfg, model_params = None, **kwargs) -> None:
-        if model_params is None: raise NotImplementedError("[ModelMgr] model_params must be specified!")
-        self.cfg = cfg
+class ModelMgr(Moduler):
+    ''' model manager
+    '''
+    def __init__(self, cfg: MergedConfig, *args, **kwargs) -> None:
+        super().__init__(cfg, *args, **kwargs)
         self.logger = kwargs['logger']
-        self._latest_model_params_dict = {0: model_params}
-        self._saved_policy_bundles: Dict[int, int] = {}
-        self._saved_policy_queue = Queue(maxsize = 128)
-        self._thread_save_policy = threading.Thread(target=self._save_policy)
-        self._thread_save_policy.setDaemon(True)
+        self._latest_model_params_dict = {0: kwargs['model_params']}
+        self._saved_model_que = RayQueue(maxsize = 128) if self.use_ray else Queue(maxsize = 128)
+        
+    def _t_start(self):
+        self._t_save_policy = threading.Thread(target=self._save_policy)
+        self._t_save_policy.setDaemon(True)
 
+    def init(self):
+        if self.use_ray:
+            self.logger.info.remote(f"[ModelMgr] Start model manager!")
+        else:
+            self.logger.info(f"[ModelMgr] Start model manager!")
+        self._t_start()  
+    
     def pub_msg(self, msg: Msg):
         ''' publish message
         '''
@@ -31,11 +51,6 @@ class ModelMgr:
         else:
             raise NotImplementedError
         
-    def run(self):
-        ''' start
-        '''
-        self.logger.info.remote(f"[ModelMgr] Start model manager!")
-        self._thread_save_policy.start()
 
     def _put_model_params(self, msg_data):
         ''' put model params
@@ -44,8 +59,8 @@ class ModelMgr:
         if update_step >= list(self._latest_model_params_dict.keys())[-1]:
             self._latest_model_params_dict[update_step] = model_params
         if update_step % self.cfg.model_save_fre == 0:
-            while not self._saved_policy_queue.full(): # if queue is full, wait for 0.01s
-                self._saved_policy_queue.put((update_step, model_params))
+            while not self._saved_model_que.full(): # if queue is full, wait for 0.01s
+                self._saved_model_que.put((update_step, model_params))
                 time.sleep(0.001)
                 break
 
@@ -58,8 +73,8 @@ class ModelMgr:
         ''' async run
         '''
         while True:
-            while not self._saved_policy_queue.empty():
-                update_step, model_params = self._saved_policy_queue.get()
+            while not self._saved_model_que.empty():
+                update_step, model_params = self._saved_model_que.get()
                 torch.save(model_params, f"{self.cfg.model_dir}/{update_step}")
             time.sleep(0.1)
     

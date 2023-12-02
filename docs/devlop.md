@@ -45,28 +45,28 @@ class RayWorker(BaseWorker):
 
 @exec_timer
 def train_single(cfg):
-    workers = [BaseWorker(id=i) for i in range(cfg.n_workers)]
-    for i in range(cfg.n_workers):
+    workers = [BaseWorker(id=i) for i in range(cfg.n_interactors)]
+    for i in range(cfg.n_interactors):
         workers[i].run()
 
 @exec_timer
 def train_mp(cfg):
     processes = []
-    workers = [BaseWorker(id=i) for i in range(cfg.n_workers)]
-    for i in range(cfg.n_workers):
+    workers = [BaseWorker(id=i) for i in range(cfg.n_interactors)]
+    for i in range(cfg.n_interactors):
         processes.append(mp.Process(target=workers[i].run))
         processes[i].start()
-    for i in range(cfg.n_workers):
+    for i in range(cfg.n_interactors):
         processes[i].join()
 
 @exec_timer
 def train_ray(cfg):
-    workers = [RayWorker.remote(id=i) for i in range(cfg.n_workers)]
+    workers = [RayWorker.remote(id=i) for i in range(cfg.n_interactors)]
     ray.get([worker.run.remote() for worker in workers])
 
 class Config:
     def __init__(self) -> None:
-        self.n_workers = 5
+        self.n_interactors = 5
 
 if __name__ == "__main__":
     cfg = Config()
@@ -85,7 +85,7 @@ if __name__ == "__main__":
 函数 train_ray 执行时间：0.6961688995361328 秒
 ```
 
-可以看到，单进程执行时间最短，`multiprocessing`次之，`Ray`最长，这就是因为通信的基础消耗导致的。通过更改函数的执行时间和`n_workers`参数，得到下表：
+可以看到，单进程执行时间最短，`multiprocessing`次之，`Ray`最长，这就是因为通信的基础消耗导致的。通过更改函数的执行时间和`n_interactors`参数，得到下表：
 
 
 
@@ -124,10 +124,10 @@ class Learner:
         return self.id
 
 def train(cfg,workers,leaner):
-    # for i in range(cfg.n_workers):
+    # for i in range(cfg.n_interactors):
     #     workers[i].run.remote()
     s_t = time.time()
-    print(ray.get([workers[i].run.remote() for i in range(cfg.n_workers)]))
+    print(ray.get([workers[i].run.remote() for i in range(cfg.n_interactors)]))
     e_t = time.time()
     print(f"worker: {e_t - s_t}")
     baseworker = BaseWorker()
@@ -140,7 +140,7 @@ def train(cfg,workers,leaner):
 
 class Config:
     def __init__(self) -> None:
-        self.n_workers = 5
+        self.n_interactors = 5
 if __name__ == "__main__":
     ray.shutdown()
     context = ray.init(
@@ -150,7 +150,7 @@ if __name__ == "__main__":
              dashboard_port=8265)
     print(context.dashboard_url)
     cfg = Config()
-    workers = [Worker.remote(id=i) for i in range(cfg.n_workers)]
+    workers = [Worker.remote(id=i) for i in range(cfg.n_interactors)]
     leaner = Learner.remote()
     for i in range(10):
         s_t = time.time()

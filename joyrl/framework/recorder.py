@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-04-28 16:18:44
 LastEditor: JiangJi
-LastEditTime: 2023-12-02 17:47:21
+LastEditTime: 2023-12-02 23:35:04
 Discription: 
 '''
 import ray 
@@ -16,7 +16,7 @@ import time
 import threading
 import logging
 import pandas
-from queue import Queue
+from multiprocessing import Queue
 from torch.utils.tensorboard import SummaryWriter  
 from joyrl.framework.message import Msg, MsgType
 from joyrl.framework.config import MergedConfig
@@ -42,8 +42,11 @@ class Recorder(Moduler):
         self._t_save_interact_summary.start()
         self._t_save_policy_summary.start()
 
-    def run(self):
-        self.logger.info("[Recorder.run] Start recorder!")
+    def init(self):
+        if self.use_ray:
+            self.logger.info.remote("[Recorder.init] Start recorder!")
+        else:
+            self.logger.info("[Recorder.run] Start recorder!")
         self._t_start()
     
     def ray_run(self):
@@ -92,23 +95,29 @@ class Recorder(Moduler):
 
     def _save_interact_summary(self):
         while True:
-            while not self._summary_que_dict['interact'].empty():
-                summary_data_list = self._summary_que_dict['interact'].get()
-                for summary_data in summary_data_list:
-                    step, summary = summary_data
-                    self._write_tb_scalar(step, summary, writter_type = 'interact')
-                    self._write_dataframe(step, summary, writter_type = 'interact')
+            try:
+                while not self._summary_que_dict['interact'].empty():
+                    summary_data_list = self._summary_que_dict['interact'].get()
+                    for summary_data in summary_data_list:
+                        step, summary = summary_data
+                        self._write_tb_scalar(step, summary, writter_type = 'interact')
+                        self._write_dataframe(step, summary, writter_type = 'interact')
+                    break
+            except Exception as e:
                 break
             time.sleep(0.002)
 
     def _save_policy_summary(self):
         while True:
-            while not self._summary_que_dict['policy'].empty():
-                summary_data_list = self._summary_que_dict['policy'].get()
-                for summary_data in summary_data_list:
-                    step, summary = summary_data
-                    self._write_tb_scalar(step, summary, writter_type = 'policy')
-                    self._write_dataframe(step, summary, writter_type = 'policy')
+            try:
+                while not self._summary_que_dict['policy'].empty():
+                    summary_data_list = self._summary_que_dict['policy'].get()
+                    for summary_data in summary_data_list:
+                        step, summary = summary_data
+                        self._write_tb_scalar(step, summary, writter_type = 'policy')
+                        self._write_dataframe(step, summary, writter_type = 'policy')
+                    break
+            except Exception as e:
                 break
             time.sleep(0.001)
 

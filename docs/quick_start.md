@@ -133,7 +133,7 @@ general_cfg:
   mode: train # run mode: train, test
   collect_traj: true
   mp_backend: single # multi-processing mode: null(default), ray
-  n_workers: 1 # number of workers if using multi-processing, default 1
+  n_interactors: 1 # number of workers if using multi-processing, default 1
   load_checkpoint: false # if load checkpoint or not
   load_path: Train_CartPole-v1_DQN_20221026-054757 # if load checkpoint, then config path in 'tasks' dir
   max_episode: 100 # max episodes, set -1 to keep running
@@ -250,9 +250,9 @@ general_cfg:
 ```yaml
 general_cfg:
   mp_backend: ray # multi-processing mode: single(default), ray
-  n_workers: 4 # number of workers if using multi-processing, default 1
+  n_interactors: 4 # number of workers if using multi-processing, default 1
 ```
-其中`single`表示普通的单进程模式，而多进程模式需要安装`ray`库，`n_workers`表示进程数，进程数越多，训练速度越快。
+其中`single`表示普通的单进程模式，而多进程模式需要安装`ray`库，`n_interactors`表示进程数，进程数越多，训练速度越快。
 
 关于多进程需要注意的地方：
 
@@ -303,12 +303,12 @@ class DataServer:
 if __name__ == "__main__":
     # 启动并行任务
     ray.shutdown()
-    for n_workers in [1,2,4]:
+    for n_interactors in [1,2,4]:
         ray.init()
         s_t = time.time()
-        print(f"n_workers {n_workers}")
+        print(f"n_interactors {n_interactors}")
         workers = []
-        for i in range(n_workers):
+        for i in range(n_interactors):
             workers.append(Worker.remote(i))
         tracker = DataServer.remote()
         learners = []
@@ -326,37 +326,37 @@ if __name__ == "__main__":
 首先，注释掉`Learner`中的`time.sleep(0.1)`，运行结果如下：
 
 ```bash
-n_workers 1
+n_interactors 1
 time cost:  10.974063396453857
-n_workers 2
+n_interactors 2
 time cost:  5.955186367034912
-n_workers 4
+n_interactors 4
 time cost:  3.4605765342712402
 ```
-可以看到随着`n_workers`数增加，计算时间会减少，这是因为`Learner`的计算时间占比较小，而`Worker`的交互时间占比较大，多进程可以减少交互时间。
+可以看到随着`n_interactors`数增加，计算时间会减少，这是因为`Learner`的计算时间占比较小，而`Worker`的交互时间占比较大，多进程可以减少交互时间。
 
 接着，注释掉`Worker`中的`time.sleep(0.1)`，并取消注释`Learner`中的`time.sleep(0.1)`，运行结果如下：
 
 ```bash
-n_workers 1
+n_interactors 1
 time cost:  11.051950216293335
-n_workers 2
+n_interactors 2
 time cost:  11.00266146659851
-n_workers 4
+n_interactors 4
 time cost:  11.287662506103516
 ```
-可以看到随着`n_workers`数增加，计算时间并没有减少，约维持在`10s`左右，这是因为`Learner`的计算时间占比较大，而`Worker`的交互时间占比较小，因此该程序的瓶颈主要在于`Learner`，多进程并不能加速训练。
+可以看到随着`n_interactors`数增加，计算时间并没有减少，约维持在`10s`左右，这是因为`Learner`的计算时间占比较大，而`Worker`的交互时间占比较小，因此该程序的瓶颈主要在于`Learner`，多进程并不能加速训练。
 
 但是当我们进一步开启`multi-learner`模式，见`Worker`中相关代码，运行结果如下：
 
 ```bash
-n_workers 1
+n_interactors 1
 time cost:  11.067777156829834
-n_workers 2
+n_interactors 2
 time cost:  5.9282824993133545
-n_workers 4
+n_interactors 4
 time cost:  6.0641443729400635
 ```
-我们发现会发现`n_workers`数目增加到2时，计算时间开始减少，但进一步增加`n_workers`时，时间瓶颈维持在`5s`左右，这是因为只模拟了两个`Learner`。
+我们发现会发现`n_interactors`数目增加到2时，计算时间开始减少，但进一步增加`n_interactors`时，时间瓶颈维持在`5s`左右，这是因为只模拟了两个`Learner`。
 
 综合以上实验，我们可以得出结论，需要根据交互时间和训练时间综合考虑多进程的设置方式，当然对于复杂的环境尤其是需要图像的Atari环境或者一些`on-policy`算法(这类算法并不会每步都更新算法，而是搜集一定的样本在更新算法，相当于`Worker`的交互时间占比更多)，多进程一般都能加速训练。

@@ -5,14 +5,13 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 17:30:36
 LastEditor: JiangJi
-LastEditTime: 2023-12-02 17:36:05
+LastEditTime: 2023-12-02 21:59:10
 Discription: 
 '''
-import ray
 from joyrl.framework.config import MergedConfig
 from joyrl.framework.message import Msg
 
-class Moduler:
+class Moduler(object):
     def __init__(self, cfg: MergedConfig, *args, **kwargs) -> None:
         self.cfg = cfg
         self.use_ray = hasattr(self, '_ray_actor_id') # ray.is_initialized()
@@ -32,6 +31,11 @@ class Moduler:
         '''
         raise NotImplementedError
 
+    def init(self):
+        ''' init module
+        '''
+        raise NotImplementedError
+    
     def run(self):
         ''' run module
         '''

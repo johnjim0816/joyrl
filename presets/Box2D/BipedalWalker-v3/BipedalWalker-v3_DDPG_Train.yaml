@@ -12,7 +12,7 @@ general_cfg:
   show_fig: false
   test_eps: 3
   train_eps: 700
-  n_workers: 1
+  n_interactors: 1
   render: false
   render_mode: rgb_array
 algo_cfg:

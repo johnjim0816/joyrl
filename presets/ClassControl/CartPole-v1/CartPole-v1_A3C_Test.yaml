@@ -3,7 +3,7 @@ general_cfg:
   device: cpu
   env_name: CartPole-v1
   wrapper: null
-  n_workers: 1 # number of workers for parallel training
+  n_interactors: 1 # number of workers for parallel training
   train_eps: 400
   test_eps: 10
   eval_eps: 10

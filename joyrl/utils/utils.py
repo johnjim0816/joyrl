@@ -139,14 +139,7 @@ def get_logger(fpath):
     logger.addHandler(ch)
     logger.addHandler(fh)
     return logger
-def save_cfgs(cfgs, fpath):
-    ''' save config
-    '''
-    Path(fpath).mkdir(parents=True, exist_ok=True)
- 
-    with open(f"{fpath}/config.yaml", 'w') as f:
-        for cfg_type in cfgs:
-            yaml.dump({cfg_type: cfgs[cfg_type].__dict__}, f, default_flow_style=False)
+
 def load_cfgs(cfgs, fpath):
     with open(fpath) as f:
         load_cfg = yaml.load(f,Loader=yaml.FullLoader)

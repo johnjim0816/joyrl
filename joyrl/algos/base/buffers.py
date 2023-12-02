@@ -3,7 +3,7 @@ import torch
 import numpy as np
 from enum import Enum
 from collections import deque
-from joyrl.config.general_config import MergedConfig
+from joyrl.framework.config import MergedConfig
 from joyrl.utils.utils import get_shape_from_obs_space, get_shape_from_act_space
 
 def _cast(x):

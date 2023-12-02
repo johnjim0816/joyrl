@@ -4,39 +4,32 @@ import time
 import copy
 import os
 import threading
-from joyrl.config.general_config import MergedConfig
-
-class BaseTester:
-    ''' Base class for online tester
+from joyrl.framework.config import MergedConfig
+from joyrl.framework.base import Moduler
+    
+class OnlineTester(Moduler):
+    ''' Online tester
     '''
-    def __init__(self, cfg, env = None, policy = None, *args, **kwargs) -> None:
-        self.cfg = cfg
-        self.env = copy.deepcopy(env)
-        self.policy = copy.deepcopy(policy)
+    def __init__(self, cfg : MergedConfig, *args, **kwargs) -> None:
+        super().__init__(cfg, *args, **kwargs)
         self.logger = kwargs['logger']
-        self.best_eval_reward = -float('inf')
-
-    def run(self, policy, *args, **kwargs):
-        ''' Run online tester
-        '''
-        ''' Evaluate policy
-        '''
-        raise NotImplementedError
-@ray.remote(num_cpus = 0)
-class OnlineTester:
-    def __init__(self, cfg : MergedConfig, env = None, policy = None, *args, **kwargs) -> None:
-        if env is None: raise NotImplementedError("[OnlineTester] env must be specified!")
-        if policy is None: raise NotImplementedError("[OnlineTester] policy must be specified!")
-        self.cfg = cfg
-        self.env = copy.deepcopy(env)
-        self.policy = copy.deepcopy(policy)
+        self.env = kwargs['env']
+        self.policy = kwargs['policy']
         self.best_eval_reward = -float('inf')
         self.curr_test_step = -1
-        self._t_eval_policy = threading.Thread(target=self._eval_policy(*args, **kwargs))
-        self._t_eval_policy.setDaemon(True)
 
-    def run(self):
+    def _t_start(self):
+        self._t_eval_policy = threading.Thread(target=self._eval_policy)
+        self._t_eval_policy.setDaemon(True)
         self._t_eval_policy.start()
+        
+    def run(self):
+        self.logger.info("[OnlineTester.run] Start online tester!")
+        self._t_start()
+
+    def ray_run(self):
+        self.logger.info.remote("[OnlineTester.run] Start online tester!")
+        self._t_start()
     
     def _check_updated_model(self):
         model_step_list = os.listdir(self.cfg.model_dir)
@@ -52,7 +45,6 @@ class OnlineTester:
     def _eval_policy(self, *args, **kwargs):
         ''' Evaluate policy
         '''
-        logger = kwargs['logger']
         while True:
             updated, model_step = self._check_updated_model()
             if updated:
@@ -73,9 +65,9 @@ class OnlineTester:
                             sum_eval_reward += ep_reward
                             break
                 mean_eval_reward = sum_eval_reward / self.cfg.online_eval_episode
-                logger.info.remote(f"test_step: {self.curr_test_step}, online_eval_reward: {mean_eval_reward:.3f}")
+                self.logger.info.remote(f"test_step: {self.curr_test_step}, online_eval_reward: {mean_eval_reward:.3f}")
                 if mean_eval_reward >= self.best_eval_reward:
-                    logger.info.remote(f"current test step obtain a better online_eval_reward: {mean_eval_reward:.3f}, save the best model!")
+                    self.logger.info.remote(f"current test step obtain a better online_eval_reward: {mean_eval_reward:.3f}, save the best model!")
                     torch.save(model_params, f"{self.cfg.model_dir}/best")
                     self.best_eval_reward = mean_eval_reward
             time.sleep(1)

@@ -4,7 +4,7 @@ import copy
 from typing import Tuple
 from joyrl.algos.base.exps import Exp
 from joyrl.framework.message import Msg, MsgType
-from joyrl.config.general_config import MergedConfig
+from joyrl.framework.config import MergedConfig
 
 class BaseInteractor:
     ''' Interactor for gym env to support sample n-steps or n-episodes traning data

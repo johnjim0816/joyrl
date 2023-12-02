@@ -9,7 +9,7 @@ import argparse,datetime,importlib,yaml,time
 import gymnasium as gym
 import torch.multiprocessing as mp
 from pathlib import Path
-from joyrl.config.general_config import GeneralConfig, MergedConfig, DefaultConfig
+from joyrl.framework.config import GeneralConfig, MergedConfig, DefaultConfig
 from joyrl.framework.collector import Collector
 from joyrl.framework.tracker import Tracker
 from joyrl.framework.interactor import InteractorMgr
@@ -18,14 +18,15 @@ from joyrl.framework.recorder import Logger, Recorder
 from joyrl.framework.tester import OnlineTester
 from joyrl.framework.trainer import Trainer
 from joyrl.framework.model_mgr import ModelMgr
-from joyrl.utils.utils import save_cfgs, merge_class_attrs, all_seed,save_frames_as_gif
+from joyrl.utils.utils import merge_class_attrs, all_seed,save_frames_as_gif
 
 class Main(object):
     def __init__(self) -> None:
-        self.get_default_cfg()  # get default config
-        self.process_yaml_cfg()  # load yaml config
-        self.merge_cfgs() # merge all configs
-        self.create_dirs()  # create dirs
+        self._get_default_cfg()  # get default config
+        self._process_yaml_cfg()  # load yaml config
+        self._merge_cfgs() # merge all configs
+        self._config_dirs()  # create dirs
+        self._save_cfgs({'general_cfg': self.general_cfg, 'algo_cfg': self.algo_cfg, 'env_cfg': self.env_cfg})
         all_seed(seed=self.general_cfg.seed)  # set seed == 0 means no seed
         self.check_sample_length(self.cfg) # check onpolicy sample length
         
@@ -51,7 +52,7 @@ class Main(object):
         print_cfg(self.cfg.algo_cfg, name = 'Algo Configs')
         print_cfg(self.cfg.env_cfg, name = 'Env Configs')
 
-    def get_default_cfg(self):
+    def _get_default_cfg(self):
         ''' get default config
         '''
         self.general_cfg = GeneralConfig() # general config
@@ -62,7 +63,7 @@ class Main(object):
         self.env_mod = importlib.import_module(f"joyrl.envs.{self.env_name}.config") # import env config
         self.env_cfg = self.env_mod.EnvConfig()
 
-    def process_yaml_cfg(self):
+    def _process_yaml_cfg(self):
         ''' load yaml config
         '''
         parser = argparse.ArgumentParser(description="hyperparameters")
@@ -84,7 +85,7 @@ class Main(object):
                 self.env_cfg = self.env_mod.EnvConfig()
                 self.load_yaml_cfg(self.env_cfg, load_cfg, 'env_cfg')
 
-    def merge_cfgs(self):
+    def _merge_cfgs(self):
         ''' merge all configs
         '''
         self.cfg = MergedConfig()
@@ -94,14 +95,20 @@ class Main(object):
         self.cfg = merge_class_attrs(self.cfg, self.general_cfg)
         self.cfg = merge_class_attrs(self.cfg, self.algo_cfg)
         self.cfg = merge_class_attrs(self.cfg, self.env_cfg)
-        self.save_cfgs = {'general_cfg': self.general_cfg, 'algo_cfg': self.algo_cfg, 'env_cfg': self.env_cfg}
+        
+    def _save_cfgs(self, config_dict: dict):
+        ''' save config
+        '''
+        with open(f"{self.cfg.task_dir}/config.yaml", 'w') as f:
+            for cfg_type in config_dict:
+                yaml.dump({cfg_type: config_dict[cfg_type].__dict__}, f, default_flow_style=False)
 
     def load_yaml_cfg(self,target_cfg: DefaultConfig,load_cfg,item):
         if load_cfg[item] is not None:
             for k, v in load_cfg[item].items():
                 setattr(target_cfg, k, v)
 
-    def create_dirs(self):
+    def _config_dirs(self):
         def config_dir(dir,name = None):
             Path(dir).mkdir(parents=True, exist_ok=True)
             setattr(self.cfg, name, dir)
@@ -176,10 +183,34 @@ class Main(object):
         setattr(self.cfg, 'onpolicy_flag', onpolicy_flag)
         setattr(self.cfg, 'n_sample_steps', n_sample_steps)
         setattr(self.cfg, 'n_sample_episodes', n_sample_episodes)
+    
+    def _start(self, **kwargs):
+        ''' start serial training
+        '''
+        env, policy, data_handler = kwargs['env'], kwargs['policy'], kwargs['data_handler']
+        tracker = Tracker(self.cfg)
+        logger = Logger(self.cfg)
+        recorder = Recorder(self.cfg, logger = logger)
+        online_tester = OnlineTester(self.cfg, env = env, policy = policy, logger = logger)
+        collector = Collector(self.cfg, data_handler = data_handler)
+        interactor_mgr = InteractorMgr(self.cfg, env = env, policy = policy)
+        learner_mgr = LearnerMgr(self.cfg, policy = policy)
+        model_mgr = ModelMgr(self.cfg, model_params = policy.get_model_params(),logger = logger)
+        trainer = Trainer(self.cfg,
+                                tracker = tracker,
+                                model_mgr = model_mgr,
+                                collector = collector,
+                                interactor_mgr = interactor_mgr,
+                                learner_mgr = learner_mgr,
+                                online_tester = online_tester,
+                                recorder = recorder,
+                                logger = logger)
+        trainer.run()
 
-    def run(self) -> None:
-        env = self.env_config() # create single env
-        policy, data_handler = self.policy_config(self.cfg) # configure policy and data_handler
+    def _ray_start(self, **kwargs):
+        ''' start parallel training
+        '''
+        env, policy, data_handler = kwargs['env'], kwargs['policy'], kwargs['data_handler']
         ray.init()
         tracker = Tracker.remote(self.cfg)
         logger = Logger.remote(self.cfg)
@@ -189,7 +220,8 @@ class Main(object):
         interactor_mgr = InteractorMgr.remote(self.cfg, env = env, policy = policy)
         learner_mgr = LearnerMgr.remote(self.cfg, policy = policy)
         model_mgr = ModelMgr.remote(self.cfg, model_params = policy.get_model_params(),logger = logger)
-        trainer = Trainer.remote(self.cfg,
+
+        trainer = ray.remote(Trainer).remote(self.cfg,
                                 tracker = tracker,
                                 model_mgr = model_mgr,
                                 collector = collector,
@@ -197,47 +229,36 @@ class Main(object):
                                 learner_mgr = learner_mgr,
                                 online_tester = online_tester,
                                 recorder = recorder,
-                                logger = logger)
-        ray.get(trainer.run.remote())
-
-
-
-
-        # tracker = SimpleTracker(self.cfg)
-        # logger = SimpleLogger(self.cfg.log_dir)
-        # collector = SimpleCollector(self.cfg, data_handler = data_handler)
-        # worker = DummyWorker(self.cfg, 
-        #                                     env = env,
-        #                                     policy = policy,
-        #                                     )
-        # learner = SimpleLearner(self.cfg, 
-        #                         policy = policy,
-        #                         tracker = tracker,
-        #                         collector = collector
-        #                         )
-        # online_tester = SimpleTester(self.cfg, 
-        #                             env = env,
-        #                             policy = policy,    
-        #                             logger = logger
-        #                             ) # create online tester
-        # model_mgr = ModelMgr(self.cfg, 
-        #                     model_params = policy.get_model_params(),
-        #                     tracker = tracker,
-        #                     logger = logger
-        #                     )
-        # recorder = SimpleRecorder(self.cfg) # create stats recorder
-        # self.print_cfgs(logger = logger)  # print config
-        # trainer = SimpleTrainer(self.cfg, 
+                                logger = logger).options(num_cpus = 0)
+        
+        # trainer = Trainer.remote(self.cfg,
         #                         tracker = tracker,
         #                         model_mgr = model_mgr,
-        #                         worker = worker, 
-        #                         learner = learner, 
-        #                         collector = collector, 
+        #                         collector = collector,
+        #                         interactor_mgr = interactor_mgr,
+        #                         learner_mgr = learner_mgr,
         #                         online_tester = online_tester,
-        #                         recorder = recorder, 
-        #                         logger = logger) # create trainer
-        # trainer.run() # run trainer
-        # save_cfgs(self.save_cfgs, self.cfg.task_dir)  # save config
+        #                         recorder = recorder,
+        #                         logger = logger)
+        ray.get(trainer.run.remote())
+
+    def run(self) -> None:
+        env = self.env_config() # create single env
+        policy, data_handler = self.policy_config(self.cfg) # configure policy and data_handler
+        if self.cfg.learner_mode == 'serial':
+            self._start(
+                env = env,
+                policy = policy,
+                data_handler = data_handler
+            )
+        elif self.cfg.learner_mode == 'parallel':
+            self._ray_start(
+                env = env,
+                policy = policy,
+                data_handler = data_handler
+            )
+        else:
+            raise ValueError(f"[Main.run] learner_mode must be 'serial' or 'parallel'!")
 
 if __name__ == "__main__":
     main = Main()

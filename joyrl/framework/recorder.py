@@ -5,11 +5,11 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-04-28 16:18:44
 LastEditor: JiangJi
-LastEditTime: 2023-05-15 23:40:00
+LastEditTime: 2023-12-02 17:47:21
 Discription: 
 '''
 import ray 
-from ray.util.queue import Queue, Empty, Full
+from ray.util.queue import Queue as RayQueue
 from pathlib import Path
 import pickle
 import time
@@ -19,24 +19,36 @@ import pandas
 from queue import Queue
 from torch.utils.tensorboard import SummaryWriter  
 from joyrl.framework.message import Msg, MsgType
-from joyrl.config.general_config import MergedConfig
+from joyrl.framework.config import MergedConfig
+from joyrl.framework.base import Moduler
 
-@ray.remote(num_cpus=0)
-class Recorder:
+class Recorder(Moduler):
+    ''' Recorder for recording training information
+    '''
     def __init__(self, cfg: MergedConfig, *args, **kwargs) -> None:
-        self.cfg = cfg
+        super().__init__(cfg, *args, **kwargs)
         self.logger = kwargs['logger']
         self._init_writter()
-        self._summary_que_dict = { 'interact': Queue(maxsize = 256), 'policy': Queue(maxsize = 256)}
-        self._thread_save_interact_summary = threading.Thread(target=self._save_interact_summary)
-        self._thread_save_interact_summary.setDaemon(True)
-        self._thread_save_policy_summary = threading.Thread(target=self._save_policy_summary)
-        self._thread_save_policy_summary.setDaemon(True)
+        self._summary_que_dict = {}
+        self._summary_que_dict['interact'] = RayQueue(maxsize = 256) if self.use_ray else Queue(maxsize = 256)
+        self._summary_que_dict['policy'] = RayQueue(maxsize = 256) if self.use_ray else Queue(maxsize = 256)
+
+    def _t_start(self):
+
+        self._t_save_interact_summary = threading.Thread(target=self._save_interact_summary)
+        self._t_save_interact_summary.setDaemon(True)
+        self._t_save_policy_summary = threading.Thread(target=self._save_policy_summary)
+        self._t_save_policy_summary.setDaemon(True)
+        self._t_save_interact_summary.start()
+        self._t_save_policy_summary.start()
 
     def run(self):
-        self.logger.info.remote("[Recorder] Start recorder!")
-        self._thread_save_interact_summary.start()
-        self._thread_save_policy_summary.start()
+        self.logger.info("[Recorder.run] Start recorder!")
+        self._t_start()
+    
+    def ray_run(self):
+        self.logger.info.remote("[Recorder.run] Start recorder!")
+        self._t_start()
 
     def pub_msg(self, msg: Msg):
         ''' publish message
@@ -100,77 +112,35 @@ class Recorder:
                 break
             time.sleep(0.001)
 
-# class SimpleRecorder(BaseRecorder):
-#     def __init__(self, cfg) -> None:
-#         super().__init__(cfg)
-
-
-# @ray.remote
-# class RayStatsRecorder(BaseRecorder):
-#     ''' statistics recorder
-#     '''
-#     def __init__(self, cfg) -> None:
-#         super().__init__(cfg)
-  
-class BaseLogger(object):
-    def __init__(self, fpath = None) -> None:
-        Path(fpath).mkdir(parents=True, exist_ok=True)
-        self.logger = logging.getLogger(name="BaseLog")  
-        self.logger.setLevel(logging.INFO) # default level is INFO
-        self.formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: - %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S')
-        # output to file by using FileHandler
-        fh = logging.FileHandler(f"{fpath}/log.txt")
-        fh.setLevel(logging.DEBUG)
-        fh.setFormatter(self.formatter)
-        self.logger.addHandler(fh)
-    def info(self, msg):
-        self.logger.info(msg)
-
-class SimpleLogger(BaseLogger):
-    ''' Simple logger for print log to console
-    '''
-    def __init__(self, fpath = None) -> None:
-        super().__init__(fpath)
-        self.logger.name = "SimpleLog"
-        # output to console by using StreamHandler
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.DEBUG)
-        ch.setFormatter(self.formatter)
-        self.logger.addHandler(ch)
-
-@ray.remote
-class RayLogger(BaseLogger):
-    ''' Ray logger for print log to console
-    '''
-    def __init__(self, fpath=None) -> None:
-        super().__init__(fpath)
-        self.logger.name = "RayLog"
-    def info(self, msg):
-        super().info(msg)
-        print(msg) # print log to console
-
-@ray.remote(num_cpus=0)
-class Logger:
+class Logger(Moduler):
     ''' Logger for print log to console
     '''
-    def __init__(self, cfg: MergedConfig) -> None:
-        self.logger = logging.getLogger(name="BaseLog")  
+    def __init__(self, cfg: MergedConfig, *args, **kwargs) -> None:
+        super().__init__(cfg, *args, **kwargs)
+        self.logger = logging.getLogger(name="Log")  
         self.logger.setLevel(logging.INFO) # default level is INFO
         self.formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: - %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S')
         # output to file by using FileHandler
-        fh = logging.FileHandler(f"{cfg.log_dir}/log.txt")
+        fh = logging.FileHandler(f"{self.cfg.log_dir}/log.txt")
         fh.setLevel(logging.DEBUG)
         fh.setFormatter(self.formatter)
         self.logger.addHandler(fh)
-        self.logger.name = "RayLog"
-
+        if self.use_ray:
+            self.logger.name = "RayLog"
+        else:
+            ch = logging.StreamHandler()
+            ch.setLevel(logging.INFO)
+            ch.setFormatter(self.formatter)
+            self.logger.addHandler(ch)
+    
     def info(self, content):
+        ''' print info
+        '''
         self.logger.info(content)
-        print(content) # print log to console
+        if self.use_ray: print(content)
+    
         
-
 
 class BaseTrajCollector:
     ''' Base class for trajectory collector

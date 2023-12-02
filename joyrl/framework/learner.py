@@ -4,7 +4,7 @@ import time
 from queue import Queue
 from typing import Tuple
 from joyrl.framework.message import Msg, MsgType
-from joyrl.config.general_config import MergedConfig
+from joyrl.framework.config import MergedConfig
 
 class BaseLearner:
     def __init__(self, cfg, id = 0, policy = None, *args, **kwargs) -> None:

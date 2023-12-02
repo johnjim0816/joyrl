@@ -1,17 +1,25 @@
 import ray
-from ray.util.queue import Queue, Empty, Full
+from ray.util.queue import Queue as RayQueue
+from multiprocessing import Queue
 import threading
 from joyrl.framework.message import Msg, MsgType
-from joyrl.config.general_config import MergedConfig
+from joyrl.framework.config import MergedConfig
 from joyrl.algos.base.data_handler import BaseDataHandler
+from joyrl.framework.base import Moduler
 
-@ray.remote(num_cpus=0)
-class Collector:
+class Collector(Moduler):
+    ''' Collector for collecting training data
+    '''
+    def __init__(self, cfg: MergedConfig, data_handler: BaseDataHandler, *args, **kwargs) -> None:
+        super().__init__(cfg, *args, **kwargs)
+        self.data_handler = data_handler
+        
+
+    
     def __init__(self, cfg: MergedConfig, data_handler: BaseDataHandler) -> None:
         self.cfg = cfg
         self.data_handler = data_handler
-        self.training_data_queue = Queue(maxsize = 128)
-        self._t_sample_training_data = threading.Thread(target=self._sample_training_data)
+        
 
     def pub_msg(self, msg: Msg):
         ''' publish message
@@ -23,19 +31,21 @@ class Collector:
         elif msg_type == MsgType.COLLECTOR_GET_TRAINING_DATA:
             if self.training_data_queue.empty(): return None
             return self.training_data_queue.get()
-            return self._get_training_data()
         elif msg_type == MsgType.COLLECTOR_GET_BUFFER_LENGTH:
             return self.get_buffer_length()
         else:
             raise NotImplementedError
-    
+        
     def run(self):
-        ''' start
+        ''' run
         '''
+        # use ray queue if ray is initialized
+        self.training_data_queue = Queue(maxsize = 128) if not ray.is_initialized() else RayQueue(maxsize = 128)
+        self._t_sample_training_data = threading.Thread(target=self._sample_training_data)
         self._t_sample_training_data.start()
 
     def _sample_training_data(self):
-        ''' async run
+        '''  run
         '''
         while True:
             training_data = self._get_training_data()

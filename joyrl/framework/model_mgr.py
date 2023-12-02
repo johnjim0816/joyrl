@@ -1,11 +1,12 @@
-from framework.message import Msg, MsgType
+
 import time
 import ray
 import threading
 import torch
 from typing import Dict, List
 from queue import Queue
-from algos.base.policies import BasePolicy
+from joyrl.framework.message import Msg, MsgType
+from joyrl.algos.base.policies import BasePolicy
 
 @ray.remote(num_cpus=0)
 class ModelMgr:

@@ -9,17 +9,16 @@ import argparse,datetime,importlib,yaml,time
 import gymnasium as gym
 import torch.multiprocessing as mp
 from pathlib import Path
-from config.general_config import GeneralConfig, MergedConfig, DefaultConfig
-from framework.collector import Collector
-from framework.tracker import Tracker
-from framework.interactor import InteractorMgr
-from framework.learner import LearnerMgr
-from framework.recorder import Logger, Recorder
-from framework.tester import OnlineTester
-from framework.trainer import Trainer
-from framework.model_mgr import ModelMgr
-
-from utils.utils import save_cfgs, merge_class_attrs, all_seed,save_frames_as_gif
+from joyrl.config.general_config import GeneralConfig, MergedConfig, DefaultConfig
+from joyrl.framework.collector import Collector
+from joyrl.framework.tracker import Tracker
+from joyrl.framework.interactor import InteractorMgr
+from joyrl.framework.learner import LearnerMgr
+from joyrl.framework.recorder import Logger, Recorder
+from joyrl.framework.tester import OnlineTester
+from joyrl.framework.trainer import Trainer
+from joyrl.framework.model_mgr import ModelMgr
+from joyrl.utils.utils import save_cfgs, merge_class_attrs, all_seed,save_frames_as_gif
 
 class Main(object):
     def __init__(self) -> None:
@@ -57,11 +56,11 @@ class Main(object):
         '''
         self.general_cfg = GeneralConfig() # general config
         self.algo_name = self.general_cfg.algo_name
-        algo_mod = importlib.import_module(f"algos.{self.algo_name}.config") # import algo config
-        self.algo_cfg = algo_mod.AlgoConfig()
+        self.algo_mod = importlib.import_module(f"joyrl.algos.{self.algo_name}.config") # import algo config
+        self.algo_cfg = self.algo_mod.AlgoConfig()
         self.env_name = self.general_cfg.env_name
-        env_mod = importlib.import_module(f"envs.{self.env_name}.config") # import env config
-        self.env_cfg = env_mod.EnvConfig()
+        self.env_mod = importlib.import_module(f"joyrl.envs.{self.env_name}.config") # import env config
+        self.env_cfg = self.env_mod.EnvConfig()
 
     def process_yaml_cfg(self):
         ''' load yaml config
@@ -78,13 +77,11 @@ class Main(object):
                 self.load_yaml_cfg(self.general_cfg,load_cfg,'general_cfg')
                 # load algo config
                 self.algo_name = self.general_cfg.algo_name
-                algo_mod = importlib.import_module(f"algos.{self.algo_name}.config")
-                self.algo_cfg = algo_mod.AlgoConfig()
+                self.algo_cfg = self.algo_mod.AlgoConfig()
                 self.load_yaml_cfg(self.algo_cfg,load_cfg,'algo_cfg')
                 # load env config
                 self.env_name = self.general_cfg.env_name
-                env_mod = importlib.import_module(f"envs.{self.env_name}.config")
-                self.env_cfg = env_mod.EnvConfig()
+                self.env_cfg = self.env_mod.EnvConfig()
                 self.load_yaml_cfg(self.env_cfg, load_cfg, 'env_cfg')
 
     def merge_cfgs(self):
@@ -142,9 +139,9 @@ class Main(object):
     def policy_config(self, cfg):
         ''' configure policy and data_handler
         '''
-        policy_mod = importlib.import_module(f"algos.{cfg.algo_name}.policy")
+        policy_mod = importlib.import_module(f"joyrl.algos.{cfg.algo_name}.policy")
          # create agent
-        data_handler_mod = importlib.import_module(f"algos.{cfg.algo_name}.data_handler")
+        data_handler_mod = importlib.import_module(f"joyrl.algos.{cfg.algo_name}.data_handler")
         policy = policy_mod.Policy(cfg) 
         if cfg.load_checkpoint:
             policy.load_model(f"tasks/{cfg.load_path}/models/{cfg.load_model_step}")

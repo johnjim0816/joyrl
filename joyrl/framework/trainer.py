@@ -1,7 +1,8 @@
 import time
 import ray
-from framework.message import Msg, MsgType
-from config.general_config import MergedConfig
+from joyrl.framework.message import Msg, MsgType
+from joyrl.config.general_config import MergedConfig
+
 class BaseTrainer:
     def __init__(self, cfg, *args,**kwargs) -> None:
         self.cfg = cfg

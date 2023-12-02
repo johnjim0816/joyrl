@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 import math,random
 import numpy as np
-from algos.base.policies import BasePolicy
-from algos.base.networks import QNetwork
+from joyrl.algos.base.policies import BasePolicy
+from joyrl.algos.base.networks import QNetwork
 
 class Policy(BasePolicy):
     def __init__(self,cfg) -> None:

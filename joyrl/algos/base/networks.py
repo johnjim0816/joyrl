@@ -1,6 +1,7 @@
 import torch.nn as nn
-from algos.base.base_layers import create_layer, LayerConfig
-from algos.base.action_layers import ActionLayerType, DiscreteActionLayer, ContinuousActionLayer, DPGActionLayer
+from joyrl.algos.base.base_layers import create_layer, LayerConfig
+from joyrl.algos.base.action_layers import ActionLayerType, DiscreteActionLayer, ContinuousActionLayer, DPGActionLayer
+
 class BaseNework(nn.Module):
     def __init__(self) -> None:
         super().__init__()

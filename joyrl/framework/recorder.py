@@ -18,8 +18,8 @@ import logging
 import pandas
 from queue import Queue
 from torch.utils.tensorboard import SummaryWriter  
-from framework.message import Msg, MsgType
-from config.general_config import MergedConfig
+from joyrl.framework.message import Msg, MsgType
+from joyrl.config.general_config import MergedConfig
 
 @ray.remote(num_cpus=0)
 class Recorder:

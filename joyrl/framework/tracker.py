@@ -10,8 +10,8 @@ Discription:
 '''
 import ray
 from ray.util.queue import Queue, Empty, Full
-from framework.message import Msg, MsgType
-from config.general_config import MergedConfig
+from joyrl.framework.message import Msg, MsgType
+from joyrl.config.general_config import MergedConfig
 
 @ray.remote(num_cpus=0)
 class Tracker:

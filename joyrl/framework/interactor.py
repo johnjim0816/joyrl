@@ -2,9 +2,9 @@ import gymnasium as gym
 import ray
 import copy
 from typing import Tuple
-from algos.base.exps import Exp
-from framework.message import Msg, MsgType
-from config.general_config import MergedConfig
+from joyrl.algos.base.exps import Exp
+from joyrl.framework.message import Msg, MsgType
+from joyrl.config.general_config import MergedConfig
 
 class BaseInteractor:
     ''' Interactor for gym env to support sample n-steps or n-episodes traning data

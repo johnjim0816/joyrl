@@ -4,7 +4,8 @@ import time
 import copy
 import os
 import threading
-from config.general_config import MergedConfig
+from joyrl.config.general_config import MergedConfig
+
 class BaseTester:
     ''' Base class for online tester
     '''

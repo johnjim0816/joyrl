@@ -1,6 +1,6 @@
 import numpy as np
-from algos.base.buffers import BufferCreator
-from algos.base.exps import Exp
+from joyrl.algos.base.buffers import BufferCreator
+from joyrl.algos.base.exps import Exp
 
 class BaseDataHandler:
     ''' Basic data handler

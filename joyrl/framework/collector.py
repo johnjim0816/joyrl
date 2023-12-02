@@ -1,9 +1,9 @@
 import ray
 from ray.util.queue import Queue, Empty, Full
 import threading
-from framework.message import Msg, MsgType
-from config.general_config import MergedConfig
-from algos.base.data_handler import BaseDataHandler
+from joyrl.framework.message import Msg, MsgType
+from joyrl.config.general_config import MergedConfig
+from joyrl.algos.base.data_handler import BaseDataHandler
 
 @ray.remote(num_cpus=0)
 class Collector:

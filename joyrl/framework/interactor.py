@@ -1,6 +1,7 @@
 import gymnasium as gym
 import ray
 import copy
+import time
 import multiprocessing as mp
 from typing import Tuple
 from joyrl.algos.base.exps import Exp
@@ -69,8 +70,7 @@ class Interactor:
                 self.collector.pub_msg(Msg(type = MsgType.COLLECTOR_PUT_EXPS, data = self.exps))
                 self.exps = []
                 break
-
-    def ray_run(self, *args, **kwargs):
+    def ray_run(self):
         ''' start in async mode
         '''
         while True:
@@ -129,7 +129,7 @@ class InteractorMgr(Moduler):
         else:
             raise NotImplementedError(f"[InteractorMgr.run] worker_mode {self.cfg.worker_mode} is not implemented!")
             
-    def ray_run(self):
+    def ray_run(self): 
         self.logger.info.remote(f"[InteractorMgr.run] Start interactors!")
         for i in range(self.n_interactors):
             self.interactors[i].ray_run.remote()

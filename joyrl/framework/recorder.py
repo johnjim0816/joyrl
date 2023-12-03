@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-04-28 16:18:44
 LastEditor: JiangJi
-LastEditTime: 2023-12-02 23:35:04
+LastEditTime: 2023-12-03 16:18:50
 Discription: 
 '''
 import ray 
@@ -147,6 +147,12 @@ class Logger(Moduler):
         ''' print info
         '''
         self.logger.info(content)
+        if self.use_ray: print(content)
+    
+    def warning(self, content):
+        ''' print warning
+        '''
+        self.logger.warning(content)
         if self.use_ray: print(content)
     
         

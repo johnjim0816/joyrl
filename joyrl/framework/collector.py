@@ -15,7 +15,7 @@ class Collector(Moduler):
         super().__init__(cfg, *args, **kwargs)
         self.data_handler =kwargs['data_handler']
         self.logger = kwargs['logger']
-        self.training_data_queue = Queue(maxsize = 128) if not ray.is_initialized() else RayQueue(maxsize = 128)
+        self.training_data_que = Queue(maxsize = self.cfg.n_learners + 1) if not ray.is_initialized() else RayQueue(maxsize = self.cfg.n_learners + 1)
 
     def _t_start(self):
         self._t_sample_training_data = threading.Thread(target=self._sample_training_data)
@@ -32,7 +32,7 @@ class Collector(Moduler):
         else:
             self.logger.info("[Collector.init] Start collector!")
             # self._p_start()
-            # self._t_start()
+        self._t_start()
 
     def pub_msg(self, msg: Msg):
         ''' publish message
@@ -42,27 +42,30 @@ class Collector(Moduler):
             exps = msg_data
             self._put_exps(exps)
         elif msg_type == MsgType.COLLECTOR_GET_TRAINING_DATA:
-            return self._get_training_data()
-            # if self.training_data_queue.empty(): return None
-            # return self.training_data_queue.get()
+            if self.training_data_que.empty(): return None
+            try:
+                return self.training_data_que.get(block = False)
+            except:
+                return None
         elif msg_type == MsgType.COLLECTOR_GET_BUFFER_LENGTH:
             return self.get_buffer_length()
         else:
             raise NotImplementedError
 
     def _sample_training_data(self):
-        '''  run
+        ''' 
         '''
         while True:
-            try:
-                training_data = self._get_training_data()
-                if training_data is None: continue
-                while not self.training_data_queue.full():
-                    self.training_data_queue.put(training_data)
-                    break
-            except Exception as e:
-                break
-        
+            training_data = self._get_training_data()
+            if training_data is not None:
+                try:
+                    self.training_data_que.put(training_data, block = False)
+                except:
+                    pass
+                    # print("training_data_que is full!")
+                    # import time
+                    # time.sleep(0.001)
+            
     def _put_exps(self, exps):
         ''' add exps to data handler
         '''

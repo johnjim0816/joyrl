@@ -37,7 +37,8 @@ class Policy(BasePolicy):
         self.epsilon = self.epsilon_end + (self.epsilon_start - self.epsilon_end) * \
             math.exp(-1. * self.sample_count / self.epsilon_decay) 
         if random.random() > self.epsilon:
-            action = self.predict_action(state)
+            # before update, the network inference time may be longer
+            action = self.predict_action(state) 
         else:
             action = self.action_space.sample()
         return action

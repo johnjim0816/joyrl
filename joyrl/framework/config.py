@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:30:09
 LastEditor: JiangJi
-LastEditTime: 2023-12-02 21:10:53
+LastEditTime: 2023-12-03 16:57:28
 Discription: 
 '''
 class DefaultConfig:
@@ -35,14 +35,13 @@ class GeneralConfig():
         self.algo_name = "DQN" # name of algorithm
         self.mode = "train" # train, test
         self.worker_mode = "dummy" # dummy, ray, only works when learner_mode is serial
-        self.learner_mode = "serial" # serial, parallel, whether workers and learners are in parallel
+        self.learner_mode = "parallel" # serial, parallel, whether workers and learners are in parallel
         self.device = "cpu" # device to use
         self.seed = 0 # random seed
         self.max_episode = 100 # number of episodes for training, set -1 to keep running
         self.max_step = 200 # number of episodes for testing, set -1 means unlimited steps
         self.collect_traj = False # if collect trajectory or not
         # multiprocessing settings
-        self.mp_backend = "dummy" # multiprocessing backend: "ray", default "single"
         self.n_interactors = 1 # number of workers
         self.n_learners = 1 # number of learners if using multi-processing, default 1
         self.share_buffer = True # if all learners share the same buffer

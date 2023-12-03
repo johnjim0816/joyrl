@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2023-12-02 23:19:01
+LastEditTime: 2023-12-03 18:14:54
 Discription: 
 '''
 import time
@@ -26,7 +26,7 @@ class ModelMgr(Moduler):
     def __init__(self, cfg: MergedConfig, *args, **kwargs) -> None:
         super().__init__(cfg, *args, **kwargs)
         self.logger = kwargs['logger']
-        self._latest_model_params_dict = {0: kwargs['model_params']}
+        self._latest_model_params_dict = {'step': 0, 'model_params': kwargs['model_params']} #
         self._saved_model_que = RayQueue(maxsize = 128) if self.use_ray else Queue(maxsize = 128)
         
     def _t_start(self):
@@ -36,9 +36,9 @@ class ModelMgr(Moduler):
 
     def init(self):
         if self.use_ray:
-            self.logger.info.remote(f"[ModelMgr] Start model manager!")
+            self.logger.info.remote(f"[ModelMgr.init] Start model manager!")
         else:
-            self.logger.info(f"[ModelMgr] Start model manager!")
+            self.logger.info(f"[ModelMgr.init] Start model manager!")
         self._t_start()  
     
     def pub_msg(self, msg: Msg):
@@ -52,23 +52,29 @@ class ModelMgr(Moduler):
         else:
             raise NotImplementedError
         
-
     def _put_model_params(self, msg_data):
         ''' put model params
         '''
         update_step, model_params = msg_data
-        if update_step >= list(self._latest_model_params_dict.keys())[-1]:
-            self._latest_model_params_dict[update_step] = model_params
+        if update_step > self._latest_model_params_dict['step']:
+            self._latest_model_params_dict['step'] = update_step
+            self._latest_model_params_dict['model_params'] = model_params
         if update_step % self.cfg.model_save_fre == 0:
-            while not self._saved_model_que.full(): # if queue is full, wait for 0.01s
-                self._saved_model_que.put((update_step, model_params))
-                time.sleep(0.001)
-                break
+            while True:
+                try: # if queue is full, wait for 0.01s
+                    self._saved_model_que.put((update_step, model_params), block=False)
+                    break
+                except:
+                    if self.use_ray:
+                        self.logger.warning.remote(f"[ModelMgr._put_model_params] saved_model_que is full!")
+                    else:
+                        self.logger.warning(f"[ModelMgr._put_model_params] saved_model_que is full!")
+                    time.sleep(0.001)
 
     def _get_model_params(self):
         ''' get policy
         '''
-        return list(self._latest_model_params_dict.values())[-1]
+        return self._latest_model_params_dict['model_params']
 
     def _save_policy(self):
         ''' async run

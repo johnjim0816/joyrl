@@ -190,16 +190,15 @@ class Main(object):
         '''
         env, policy, data_handler = kwargs['env'], kwargs['policy'], kwargs['data_handler']
         ray.init()
-        tracker = Tracker.remote(self.cfg)
-        logger = Logger.remote(self.cfg)
-        recorder = Recorder.remote(self.cfg, logger = logger)
-        online_tester = OnlineTester.remote(self.cfg, env = env, policy = policy, logger = logger)
-        collector = Collector.remote(self.cfg, data_handler = data_handler)
-        interactor_mgr = InteractorMgr.remote(self.cfg, env = env, policy = policy)
-        learner_mgr = LearnerMgr.remote(self.cfg, policy = policy)
-        model_mgr = ModelMgr.remote(self.cfg, model_params = policy.get_model_params(),logger = logger)
-
-        trainer = ray.remote(Trainer).remote(self.cfg,
+        tracker = ray.remote(Tracker).options(num_cpus = 0).remote(self.cfg)
+        logger = ray.remote(Logger).options(num_cpus = 0).remote(self.cfg)
+        recorder = ray.remote(Recorder).options(num_cpus = 0).remote(self.cfg, logger = logger)
+        online_tester = ray.remote(OnlineTester).options(num_cpus = 0).remote(self.cfg, env = env, policy = policy, logger = logger)
+        collector = ray.remote(Collector).options(num_cpus = 1).remote(self.cfg, data_handler = data_handler, logger = logger)
+        interactor_mgr = ray.remote(InteractorMgr).options(num_cpus = 0).remote(self.cfg, env = env, policy = policy, logger = logger)
+        learner_mgr = ray.remote(LearnerMgr).options(num_cpus = 0).remote(self.cfg, policy = policy, logger = logger)
+        model_mgr = ray.remote(ModelMgr).options(num_cpus = 0).remote(self.cfg, model_params = policy.get_model_params(),logger = logger)
+        trainer = ray.remote(Trainer).options(num_cpus = 0).remote(self.cfg,
                                 tracker = tracker,
                                 model_mgr = model_mgr,
                                 collector = collector,
@@ -207,18 +206,8 @@ class Main(object):
                                 learner_mgr = learner_mgr,
                                 online_tester = online_tester,
                                 recorder = recorder,
-                                logger = logger).options(num_cpus = 0)
-        
-        # trainer = Trainer.remote(self.cfg,
-        #                         tracker = tracker,
-        #                         model_mgr = model_mgr,
-        #                         collector = collector,
-        #                         interactor_mgr = interactor_mgr,
-        #                         learner_mgr = learner_mgr,
-        #                         online_tester = online_tester,
-        #                         recorder = recorder,
-        #                         logger = logger)
-        ray.get(trainer.run.remote())
+                                logger = logger)
+        ray.get(trainer.ray_run.remote())
 
     def run(self) -> None:
         env = self.env_config() # create single env

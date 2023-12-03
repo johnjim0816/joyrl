@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+# coding=utf-8
+'''
+Author: JiangJi
+Email: johnjim0816@gmail.com
+Date: 2023-12-02 15:02:30
+LastEditor: JiangJi
+LastEditTime: 2023-12-03 14:43:23
+Discription: 
+'''
 import numpy as np
 from joyrl.algos.base.buffers import BufferCreator
 from joyrl.algos.base.exps import Exp
@@ -17,6 +27,7 @@ class BaseDataHandler:
 
     def add_exps(self, exps):
         self.buffer.push(exps)
+        
     def add_data_after_learn(self, data):
         ''' add update data
         '''

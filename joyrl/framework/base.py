@@ -8,14 +8,14 @@ LastEditor: JiangJi
 LastEditTime: 2023-12-02 21:59:10
 Discription: 
 '''
+import ray
 from joyrl.framework.config import MergedConfig
 from joyrl.framework.message import Msg
 
 class Moduler(object):
     def __init__(self, cfg: MergedConfig, *args, **kwargs) -> None:
         self.cfg = cfg
-        self.use_ray = hasattr(self, '_ray_actor_id') # ray.is_initialized()
-
+        self.use_ray = ray.is_initialized() 
     def _t_start(self):
         ''' start threads
         '''

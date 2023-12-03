@@ -14,7 +14,7 @@ from ray.util.queue import Queue as RayQueue
 import threading
 import torch
 from typing import Dict, List
-from multiprocessing import Queue
+from queue import Queue
 from joyrl.framework.message import Msg, MsgType
 from joyrl.algos.base.policies import BasePolicy
 from joyrl.framework.config import MergedConfig
@@ -32,6 +32,7 @@ class ModelMgr(Moduler):
     def _t_start(self):
         self._t_save_policy = threading.Thread(target=self._save_policy)
         self._t_save_policy.setDaemon(True)
+        self._t_save_policy.start()
 
     def init(self):
         if self.use_ray:
@@ -76,6 +77,6 @@ class ModelMgr(Moduler):
             while not self._saved_model_que.empty():
                 update_step, model_params = self._saved_model_que.get()
                 torch.save(model_params, f"{self.cfg.model_dir}/{update_step}")
-            time.sleep(0.1)
+            time.sleep(0.05)
     
 

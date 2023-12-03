@@ -1,7 +1,7 @@
 import ray
 from ray.util.queue import Queue as RayQueue
 import multiprocessing as mp
-from multiprocessing import Queue
+from queue import Queue
 import threading
 from joyrl.framework.message import Msg, MsgType
 from joyrl.framework.config import MergedConfig
@@ -32,7 +32,7 @@ class Collector(Moduler):
         else:
             self.logger.info("[Collector.init] Start collector!")
             # self._p_start()
-            self._t_start()
+            # self._t_start()
 
     def pub_msg(self, msg: Msg):
         ''' publish message
@@ -42,8 +42,9 @@ class Collector(Moduler):
             exps = msg_data
             self._put_exps(exps)
         elif msg_type == MsgType.COLLECTOR_GET_TRAINING_DATA:
-            if self.training_data_queue.empty(): return None
-            return self.training_data_queue.get()
+            return self._get_training_data()
+            # if self.training_data_queue.empty(): return None
+            # return self.training_data_queue.get()
         elif msg_type == MsgType.COLLECTOR_GET_BUFFER_LENGTH:
             return self.get_buffer_length()
         else:

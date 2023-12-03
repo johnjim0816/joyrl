@@ -7,7 +7,6 @@ import sys,os
 import ray
 import argparse,datetime,importlib,yaml,time 
 import gymnasium as gym
-import torch.multiprocessing as mp
 from pathlib import Path
 from joyrl.framework.config import GeneralConfig, MergedConfig, DefaultConfig
 from joyrl.framework.collector import Collector

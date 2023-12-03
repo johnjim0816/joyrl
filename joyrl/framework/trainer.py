@@ -41,6 +41,7 @@ class Trainer:
             if self.tracker.pub_msg(Msg(type = MsgType.TRACKER_CHECK_TASK_END)):
                 e_t = time.time()
                 self.logger.info(f"[Trainer.run] Finish {self.cfg.mode}ing! Time cost: {e_t - s_t:.3f} s")
+                time.sleep(1)
                 break
 
     def ray_run(self):

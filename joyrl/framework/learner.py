@@ -42,7 +42,6 @@ class Learner:
         if global_update_step % self.cfg.policy_summary_fre == 0:
             policy_summary = [(global_update_step,self.policy.get_summary())]
             self.recorder.pub_msg(Msg(type = MsgType.RECORDER_PUT_POLICY_SUMMARY, data = policy_summary))
-        self.logger.info(f"Update step {global_update_step} finished in {e_t - s_t:.3f} s")
 
     def ray_run(self):
         while True:

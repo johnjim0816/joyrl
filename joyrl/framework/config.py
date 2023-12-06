@@ -35,7 +35,7 @@ class GeneralConfig():
         self.algo_name = "DQN" # name of algorithm
         self.mode = "train" # train, test
         self.worker_mode = "dummy" # dummy, ray, only works when learner_mode is serial
-        self.learner_mode = "parallel" # serial, parallel, whether workers and learners are in parallel
+        self.learner_mode = "serial" # serial, parallel, whether workers and learners are in parallel
         self.device = "cpu" # device to use
         self.seed = 0 # random seed
         self.max_episode = 100 # number of episodes for training, set -1 to keep running

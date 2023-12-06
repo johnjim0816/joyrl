@@ -25,12 +25,14 @@ class Main(object):
         self._process_yaml_cfg()  # load yaml config
         self._merge_cfgs() # merge all configs
         self._config_dirs()  # create dirs
+        self._print_cfgs()  # print parameters
         self._save_cfgs({'general_cfg': self.general_cfg, 'algo_cfg': self.algo_cfg, 'env_cfg': self.env_cfg})
         all_seed(seed=self.general_cfg.seed)  # set seed == 0 means no seed
         
-    def print_cfgs(self, logger = None):
+    def _print_cfgs(self):
         ''' print parameters
         '''
+        logger = Logger(self.cfg)
         def print_cfg(cfg, name = ''):
             cfg_dict = vars(cfg)
             logger.info(f"{name}:")

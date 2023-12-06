@@ -1,20 +1,18 @@
 general_cfg:
   algo_name: DQN
   device: cpu
-  env_name: MountainCar-v0
+  env_name: gym
   eval_eps: 10
   eval_per_episode: 5
   load_checkpoint: false
   load_path: tasks
-  max_steps: 200
   mode: train
-  new_step_api: true
   render: false
   save_fig: true
   seed: 3
   show_fig: false
-  test_eps: 20
-  train_eps: 200
+  max_episode: -1
+  max_step: 200
   wrapper: null
   n_interactors: 1
 algo_cfg:
@@ -27,18 +25,11 @@ algo_cfg:
   lr: 0.01
   target_update: 4
   value_layers:
-  - activation: relu
-    layer_dim:
-    - n_states
-    - 256
-    layer_type: linear
-  - activation: relu
-    layer_dim:
-    - 256
-    - 256
-    layer_type: linear
-  - activation: none
-    layer_dim:
-    - 256
-    - n_actions
-    layer_type: linear
+    - layer_type: linear
+      layer_size: [256]
+      activation: relu
+    - layer_type: linear
+      layer_size: [256]
+      activation: relu
+env_cfg:
+  id: MountainCar-v0

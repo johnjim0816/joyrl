@@ -7,7 +7,7 @@ general_cfg:
   load_checkpoint: false
   load_path: tasks
   mode: train
-  render: false
+  
   save_fig: true
   seed: 3
   show_fig: false
@@ -33,3 +33,4 @@ algo_cfg:
       activation: relu
 env_cfg:
   id: MountainCar-v0
+  render: null

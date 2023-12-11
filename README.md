@@ -27,7 +27,9 @@ conda activate joyrl
 
 ```bash
 # CPU
-conda install pytorch==1.10.0 torchvision==0.11.0 torchaudio==0.10.0 cpuonly -c pytorch
+pip install torch==1.10.0 torchvision==0.11.0 torchaudio==0.10.0 
+# CPU image-url
+pip install torch==1.10.0 torchvision==0.11.0 torchaudio==0.10.0  -i https://pypi.tuna.tsinghua.edu.cn/simple
 # GPU
 conda install pytorch==1.10.0 torchvision==0.11.0 torchaudio==0.10.0 cudatoolkit=11.3 -c pytorch -c conda-forge
 # GPU镜像安装

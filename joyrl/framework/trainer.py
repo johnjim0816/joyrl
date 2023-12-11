@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2023-12-03 16:43:37
+LastEditTime: 2023-12-06 21:56:21
 Discription: 
 '''
 import time
@@ -112,5 +112,5 @@ class Trainer(Moduler):
             if ray.get(self.tracker.pub_msg.remote(Msg(type = MsgType.TRACKER_CHECK_TASK_END))):
                 e_t = time.time()
                 self.logger.info.remote(f"[Trainer.ray_run] Finish {self.cfg.mode}ing! Time cost: {e_t - s_t:.3f} s")
-                # ray.shutdown()
+                ray.shutdown()
                 break 

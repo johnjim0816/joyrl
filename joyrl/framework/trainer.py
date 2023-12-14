@@ -12,10 +12,14 @@ import time
 import ray
 from joyrl.framework.message import Msg, MsgType
 from joyrl.framework.config import MergedConfig
+from joyrl.framework.base import Moduler
+from joyrl.utils.utils import print_logs
 
-class Trainer:
-    def __init__(self, cfg : MergedConfig, *args, **kwargs) -> None:
-        self.cfg = cfg
+class Trainer(Moduler):
+    ''' Collector for collecting training data
+    '''
+    def __init__(self, cfg: MergedConfig, *args, **kwargs) -> None:
+        super().__init__(cfg, *args, **kwargs)
         self.model_mgr = kwargs['model_mgr']
         self.interactor_mgr = kwargs['interactor_mgr']
         self.learner_mgr = kwargs['learner_mgr']
@@ -24,8 +28,33 @@ class Trainer:
         self.tracker = kwargs['tracker']
         self.recorder = kwargs['recorder']
         self.logger = kwargs['logger']
+        self._print_cfgs() # print parameters
+
+    def _print_cfgs(self):
+        ''' print parameters
+        '''
+        def print_cfg(cfg, name = ''):
+            cfg_dict = vars(cfg)
+            print_logs(self.logger, f"{name}:", is_ray = self.use_ray)
+            print_logs(self.logger, ''.join(['='] * 80), is_ray = self.use_ray)
+            tplt = "{:^20}\t{:^20}\t{:^20}"
+            print_logs(self.logger, tplt.format("Name", "Value", "Type"), is_ray = self.use_ray)
+            for k, v in cfg_dict.items():
+                if v.__class__.__name__ == 'list': # convert list to str
+                    v = str(v)
+                if v is None: # avoid NoneType
+                    v = 'None'
+                if "support" in k: # avoid ndarray
+                    v = str(v[0])
+                print_logs(self.logger, tplt.format(k, v, str(type(v))), is_ray = self.use_ray)
+            print_logs(self.logger, ''.join(['='] * 80), is_ray = self.use_ray)
+        print_cfg(self.cfg.general_cfg, name = 'General Configs')
+        print_cfg(self.cfg.algo_cfg, name = 'Algo Configs')
+        print_cfg(self.cfg.env_cfg, name = 'Env Configs')
 
     def run(self):
+        if self.cfg.online_eval:
+            self.online_tester.init()
         self.model_mgr.init()
         self.recorder.init()
         self.collector.init()
@@ -43,6 +72,7 @@ class Trainer:
             recorder = self.recorder,
             logger = self.logger
         )
+
         self.logger.info(f"[Trainer.run] Start {self.cfg.mode}ing!") # print info
         s_t = time.time()
         while True:
@@ -55,7 +85,8 @@ class Trainer:
                 break
 
     def ray_run(self):
-        # self.online_tester.run.remote()
+        if self.cfg.online_eval:
+            self.online_tester.init().remote()
         self.model_mgr.init.remote()
         self.recorder.init.remote()
         self.collector.init.remote()

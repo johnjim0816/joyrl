@@ -188,7 +188,11 @@ def save_traj(traj, fpath):
     with open(traj_pkl, 'wb') as f:
         pickle.dump(traj, f)
 
-
+def print_logs(logger, content, is_ray=False):
+    if is_ray:
+        logger.info.remote(content)
+    else:
+        logger.info(content)
 
 # MAPPO beginning
 

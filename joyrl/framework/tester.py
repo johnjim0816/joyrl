@@ -74,9 +74,11 @@ class OnlineTester(Moduler):
                             sum_eval_reward += ep_reward
                             break
                 mean_eval_reward = sum_eval_reward / self.cfg.online_eval_episode
-                self.logger.info.remote(f"test_step: {self.curr_test_step}, online_eval_reward: {mean_eval_reward:.3f}")
+                logger_info = f"test_step: {self.curr_test_step}, online_eval_reward: {mean_eval_reward:.3f}"
+                self.logger.info.remote(logger_info) if self.use_ray else self.logger.info(logger_info)
                 if mean_eval_reward >= self.best_eval_reward:
-                    self.logger.info.remote(f"current test step obtain a better online_eval_reward: {mean_eval_reward:.3f}, save the best model!")
+                    logger_info = f"current test step obtain a better online_eval_reward: {mean_eval_reward:.3f}, save the best model!"
+                    self.logger.info.remote(logger_info) if self.use_ray else self.logger.info(logger_info)
                     torch.save(model_params, f"{self.cfg.model_dir}/best")
                     self.best_eval_reward = mean_eval_reward
             time.sleep(1)

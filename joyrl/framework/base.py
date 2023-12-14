@@ -15,7 +15,10 @@ from joyrl.framework.message import Msg
 class Moduler(object):
     def __init__(self, cfg: MergedConfig, *args, **kwargs) -> None:
         self.cfg = cfg
-        self.use_ray = ray.is_initialized() 
+        if kwargs.get('use_ray', None) is not None:
+            self.use_ray = kwargs['use_ray']
+        else:
+            self.use_ray = ray.is_initialized() 
     def _t_start(self):
         ''' start threads
         '''

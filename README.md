@@ -13,7 +13,7 @@ JoyRL是一套主要基于Torch的强化学习开源框架，旨在让读者仅�
 下载代码：
 
 ```bash
-git clone https://github.com/johnjim0816/joyrl-offline
+git clone --branch offline https://github.com/datawhalechina/joyrl 
 ```
 
 创建Conda环境（需先安装Anaconda）：

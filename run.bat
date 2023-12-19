@@ -1,2 +1,1 @@
-python main.py --yaml presets/ClassControl/CartPole-v1/CartPole-v1_DQN.yaml 
-@REM python main.py --yaml presets/ClassControl/MountainCar-v0/MountainCar-v0_DQN_Train.yaml
+python main.py --yaml presets/QuickStart/CartPole-v1_DQN_multi_intertactors.yaml 

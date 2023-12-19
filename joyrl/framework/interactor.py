@@ -70,6 +70,7 @@ class Interactor:
                 self.collector.pub_msg(Msg(type = MsgType.COLLECTOR_PUT_EXPS, data = self.exps))
                 self.exps = []
                 break
+
     def ray_run(self):
         ''' start in async mode
         '''
@@ -120,12 +121,6 @@ class InteractorMgr(Moduler):
         if self.cfg.worker_mode == 'dummy':
             for i in range(self.n_interactors):
                 self.interactors[i].run()
-        elif self.cfg.worker_mode == 'mp':
-            processes = [mp.Process(target=self.interactors[i].run) for i in range(self.n_interactors)]
-            for p in processes:
-                p.start()
-            for p in processes:
-                p.join()
         else:
             raise NotImplementedError(f"[InteractorMgr.run] worker_mode {self.cfg.worker_mode} is not implemented!")
             

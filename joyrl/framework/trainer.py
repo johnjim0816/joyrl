@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2023-12-06 21:56:21
+LastEditTime: 2023-12-19 22:45:45
 Discription: 
 '''
 import time
@@ -86,7 +86,7 @@ class Trainer(Moduler):
 
     def ray_run(self):
         if self.cfg.online_eval:
-            self.online_tester.init().remote()
+            self.online_tester.init.remote()
         self.model_mgr.init.remote()
         self.recorder.init.remote()
         self.collector.init.remote()
@@ -112,5 +112,6 @@ class Trainer(Moduler):
             if ray.get(self.tracker.pub_msg.remote(Msg(type = MsgType.TRACKER_CHECK_TASK_END))):
                 e_t = time.time()
                 self.logger.info.remote(f"[Trainer.ray_run] Finish {self.cfg.mode}ing! Time cost: {e_t - s_t:.3f} s")
+                time.sleep(10)
                 ray.shutdown()
                 break 

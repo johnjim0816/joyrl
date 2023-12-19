@@ -3,6 +3,9 @@ general_cfg:
   env_name: gym # env name, differ from env_id in env_cfgs
   device: cpu # device, cpu or cuda
   mode: train # run mode: train, test
+  learner_mode: parallel
+  n_interactors: 2
+  n_learners: 1
   load_checkpoint: false
   load_path: Train_ray_Pendulum-v1_DDPG_20230527-001715 
   load_model_step: best 

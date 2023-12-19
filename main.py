@@ -25,7 +25,6 @@ class Main(object):
         self._process_yaml_cfg()  # load yaml config
         self._merge_cfgs() # merge all configs
         self._config_dirs()  # create dirs
-        # self._print_cfgs()  # print parameters
         self._save_cfgs({'general_cfg': self.general_cfg, 'algo_cfg': self.algo_cfg, 'env_cfg': self.env_cfg})
         all_seed(seed=self.general_cfg.seed)  # set seed == 0 means no seed
         
@@ -57,11 +56,9 @@ class Main(object):
         '''
         self.general_cfg = GeneralConfig() # general config
         self.algo_name = self.general_cfg.algo_name
-        self.algo_mod = importlib.import_module(f"joyrl.algos.{self.algo_name}.config") # import algo config
-        self.algo_cfg = self.algo_mod.AlgoConfig()
+        self.algo_cfg = importlib.import_module(f"joyrl.algos.{self.algo_name}.config").AlgoConfig()
         self.env_name = self.general_cfg.env_name
-        self.env_mod = importlib.import_module(f"joyrl.envs.{self.env_name}.config") # import env config
-        self.env_cfg = self.env_mod.EnvConfig()
+        self.env_cfg = importlib.import_module(f"joyrl.envs.{self.env_name}.config").EnvConfig()
 
     def _process_yaml_cfg(self):
         ''' load yaml config
@@ -75,15 +72,15 @@ class Main(object):
             with open(args.yaml) as f:
                 load_cfg = yaml.load(f, Loader=yaml.FullLoader)
                 # load general config
-                self.load_yaml_cfg(self.general_cfg,load_cfg,'general_cfg')
+                self._load_yaml_cfg(self.general_cfg,load_cfg,'general_cfg')
                 # load algo config
                 self.algo_name = self.general_cfg.algo_name
-                self.algo_cfg = self.algo_mod.AlgoConfig()
-                self.load_yaml_cfg(self.algo_cfg,load_cfg,'algo_cfg')
+                self.algo_cfg = importlib.import_module(f"joyrl.algos.{self.algo_name}.config").AlgoConfig()
+                self._load_yaml_cfg(self.algo_cfg,load_cfg,'algo_cfg')
                 # load env config
                 self.env_name = self.general_cfg.env_name
-                self.env_cfg = self.env_mod.EnvConfig()
-                self.load_yaml_cfg(self.env_cfg, load_cfg, 'env_cfg')
+                self.env_cfg = importlib.import_module(f"joyrl.envs.{self.env_name}.config").EnvConfig()
+                self._load_yaml_cfg(self.env_cfg, load_cfg, 'env_cfg')
 
     def _merge_cfgs(self):
         ''' merge all configs
@@ -103,7 +100,7 @@ class Main(object):
             for cfg_type in config_dict:
                 yaml.dump({cfg_type: config_dict[cfg_type].__dict__}, f, default_flow_style=False)
 
-    def load_yaml_cfg(self,target_cfg: DefaultConfig,load_cfg,item):
+    def _load_yaml_cfg(self,target_cfg: DefaultConfig,load_cfg,item):
         if load_cfg[item] is not None:
             for k, v in load_cfg[item].items():
                 setattr(target_cfg, k, v)
@@ -143,16 +140,16 @@ class Main(object):
             env = getattr(env_wapper, wrapper_class_name)(env)
         return env
     
-    def policy_config(self, cfg):
+    def policy_config(self):
         ''' configure policy and data_handler
         '''
-        policy_mod = importlib.import_module(f"joyrl.algos.{cfg.algo_name}.policy")
+        policy_mod = importlib.import_module(f"joyrl.algos.{self.algo_name}.policy")
          # create agent
-        data_handler_mod = importlib.import_module(f"joyrl.algos.{cfg.algo_name}.data_handler")
-        policy = policy_mod.Policy(cfg) 
-        if cfg.load_checkpoint:
-            policy.load_model(f"tasks/{cfg.load_path}/models/{cfg.load_model_step}")
-        data_handler = data_handler_mod.DataHandler(cfg)
+        data_handler_mod = importlib.import_module(f"joyrl.algos.{self.algo_name}.data_handler")
+        policy = policy_mod.Policy(self.cfg) 
+        if self.cfg.load_checkpoint:
+            policy.load_model(f"tasks/{self.cfg.load_path}/models/{self.cfg.load_model_step}")
+        data_handler = data_handler_mod.DataHandler(self.cfg)
         return policy, data_handler
 
     
@@ -213,7 +210,7 @@ class Main(object):
 
     def run(self) -> None:
         env = self.env_config() # create single env
-        policy, data_handler = self.policy_config(self.cfg) # configure policy and data_handler
+        policy, data_handler = self.policy_config() # configure policy and data_handler
         if self.cfg.learner_mode == 'serial':
             self._start(
                 env = env,

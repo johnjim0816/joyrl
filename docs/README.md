@@ -1,52 +1,77 @@
 [EN](./README_en.md)|中文
 
-## JoyRL离线版
+## JoyRL
 
-JoyRL是一套主要基于Torch的强化学习开源框架，旨在让读者仅仅只需通过调参数的傻瓜式操作就能训练强化学习相关项目，从而远离繁琐的代码操作，并配有详细的注释以兼具帮助初学者入门的作用。
-
-本项目为JoyRL离线版，支持读者更方便的学习和自定义算法代码，同时配备[JoyRL上线版](https://github.com/datawhalechina/joyrl)，集成度相对更高。
+JoyRL是一套主要基于Torch的强化学习开源框架，旨在让读者**仅仅只需通过调参数的傻瓜式操作**就能训练强化学习相关项目，并配有详细的注释以兼具帮助初学者入门的作用。
 
 ## 安装说明
 
-目前支持Python 3.7和Gym 0.25.2版本。
+目前支持`Python=3.8`和`gymnasium==0.28.1`版本。
 
-创建Conda环境（需先安装Anaconda）
+下载代码：
+
 ```bash
-conda create -n joyrl python=3.7
-conda activate joyrl
-pip install -r requirements.txt
+git clone --branch offline https://github.com/datawhalechina/joyrl 
 ```
+
+创建Conda环境（需先安装Anaconda）：
+
+```bash
+conda create -n joyrl python=3.8
+conda activate joyrl
+```
+
 安装Torch：
 
 ```bash
 # CPU
-conda install pytorch==1.10.0 torchvision==0.11.0 torchaudio==0.10.0 cpuonly -c pytorch
+pip install torch==1.10.0 torchvision==0.11.0 torchaudio==0.10.0 
+# CPU image-url
+pip install torch==1.10.0 torchvision==0.11.0 torchaudio==0.10.0  -i https://pypi.tuna.tsinghua.edu.cn/simple
 # GPU
 conda install pytorch==1.10.0 torchvision==0.11.0 torchaudio==0.10.0 cudatoolkit=11.3 -c pytorch -c conda-forge
 # GPU镜像安装
 pip install torch==1.10.0+cu113 torchvision==0.11.0+cu113 torchaudio==0.10.0 --extra-index-url https://download.pytorch.org/whl/cu113
 ```
-## 使用说明
+
+安装其他依赖：
+
+```bash
+pip install -r requirements.txt
+# image-url
+pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+```
+
+## 快速开始
+
+### 离线版
+
+可以直接更改`joyrl/framework/config.GeneralConfig()`类中的参数，以及对应算法比如 `algos/DQN/config.py`中的参数，然后在**项目根目录**终端执行:
+
+```bash
+python main.py
+```
 
 直接更改 `config.config.GeneralConfig()`类中的参数比如环境名称(env_name)、算法名称(algo_name)等等，然后执行:
 ```bash
 python main.py
 ```
+
 运行之后会在目录下自动生成 `tasks`文件夹用于保存模型和结果。
 
-或者也可以新建一个`yaml`文件自定义参数，例如 `config/custom_config_Train.yaml`然后执行:
+#### yaml配置文件(推荐！！！)
+
+新建一个`yaml`文件，例如 `config/custom_config_Train.yaml`，然后执行:
+
 ```bash
 python main.py --yaml config/custom_config_Train.yaml
 ```
-在[presets](./presets/)文件夹中已经有一些预设的`yaml`文件，并且相应地在[benchmarks](./benchmarks/)文件夹中保存了一些已经训练好的结果。
+我们在[presets](./presets/)文件夹中已经有一些预设的`yaml`文件，并且相应地在[benchmarks](./benchmarks/)文件夹中保存了一些已经训练好的结果，可以直接运行查看效果。
 
 ## 说明文档
 
-请跳转[Docs](./docs/README.md)
+[文档链接](https://johnjim0816.com/joyrl-offline/)
 
-## 环境说明
-
-请跳转[envs](./envs/README.md)查看说明
 
 ## 算法列表
 

@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:30:09
 LastEditor: JiangJi
-LastEditTime: 2023-12-03 16:57:28
+LastEditTime: 2023-12-19 23:12:20
 Discription: 
 '''
 class DefaultConfig:
@@ -34,12 +34,12 @@ class GeneralConfig():
         self.env_name = "gym" # name of environment
         self.algo_name = "DQN" # name of algorithm
         self.mode = "train" # train, test
-        self.worker_mode = "dummy" # dummy, ray, only works when learner_mode is serial
+        self.worker_mode = "dummy" # dummy, only works when learner_mode is serial
         self.learner_mode = "serial" # serial, parallel, whether workers and learners are in parallel
         self.device = "cpu" # device to use
         self.seed = 0 # random seed
-        self.max_episode = 100 # number of episodes for training, set -1 to keep running
-        self.max_step = 200 # number of episodes for testing, set -1 means unlimited steps
+        self.max_episode = -1 # number of episodes for training, set -1 to keep running
+        self.max_step = -1 # number of episodes for testing, set -1 means unlimited steps
         self.collect_traj = False # if collect trajectory or not
         # multiprocessing settings
         self.n_interactors = 1 # number of workers
@@ -50,7 +50,7 @@ class GeneralConfig():
         self.online_eval_episode = 10 # online eval episodes
         self.model_save_fre = 500 # model save frequency per update step
         # load model settings
-        self.load_checkpoint = True # if load checkpoint
+        self.load_checkpoint = False # if load checkpoint
         self.load_path = "Train_single_CartPole-v1_DQN_20230515-211721" # path to load model
         self.load_model_step = 'best' # load model at which step
         # stats recorder settings

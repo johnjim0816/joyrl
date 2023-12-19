@@ -8,14 +8,7 @@ LastEditor: JiangJi
 LastEditTime: 2023-05-14 20:36:40
 Discription: 
 '''
-import sys,os
-os.environ["KMP_DUPLICATE_LIB_OK"]  =  "TRUE" # avoid "OMP: Error #15: Initializing libiomp5md.dll, but found libiomp5md.dll already initialized."
-curr_path = os.path.dirname(os.path.abspath(__file__))  # current path
-parent_path = os.path.dirname(curr_path)  # parent path 
-p_parent_path = os.path.dirname(parent_path)
-sys.path.append(p_parent_path)  # add path to system path
 import torch.multiprocessing as mp
-import gym
 from utils.utils import all_seed,check_n_workers,plot_rewards
 from common.models import ActorSoftmax, Critic
 

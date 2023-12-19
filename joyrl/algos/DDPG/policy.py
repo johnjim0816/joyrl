@@ -4,16 +4,16 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from algos.base.policies import BasePolicy
-from algos.base.networks import CriticNetwork, ActorNetwork
-from algos.base.noises import OUNoise
+from joyrl.algos.base.policies import BasePolicy
+from joyrl.algos.base.networks import CriticNetwork, ActorNetwork
+from joyrl.algos.base.noises import OUNoise
 
 class Policy(BasePolicy):
     def __init__(self,cfg) -> None:
         super(Policy, self).__init__(cfg)
         self.cfg = cfg
         self.action_type = cfg.action_type
-        self.ou_noise = OUNoise(self.action_space)  # 实例化 构造 Ornstein–Uhlenbeck 噪声的类
+        self.ou_noise = OUNoise(self.action_space)  
         self.gamma = cfg.gamma
         self.tau = cfg.tau
         self.device = torch.device(cfg.device)
@@ -22,6 +22,7 @@ class Policy(BasePolicy):
         self.create_graph() # create graph and optimizer
         self.create_summary() # create summary
         self.to(self.device)
+        self.sample_count = 0 # sample count
 
     def create_graph(self):
         self.state_size, self.action_size = self.get_state_action_size()
@@ -60,8 +61,7 @@ class Policy(BasePolicy):
     def sample_action(self, state,  **kwargs):
         ''' sample action
         '''
-        # epsilon must decay(linear,exponential and etc.) for balancing exploration and exploitation
-        self.sample_count = kwargs.get('sample_count')
+        self.sample_count += 1
         state = torch.tensor(state, device=self.device, dtype=torch.float32).unsqueeze(dim=0)
         mu = self.actor(state)  # mu is in [-1, 1]
         action = self.action_scale * mu + self.action_bias

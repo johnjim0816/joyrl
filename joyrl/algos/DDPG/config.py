@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+# coding=utf-8
+'''
+Author: JiangJi
+Email: johnjim0816@gmail.com
+Date: 2023-12-15 13:16:24
+LastEditor: JiangJi
+LastEditTime: 2023-12-19 13:17:37
+Discription: 
+'''
 import numpy as np
 class AlgoConfig:
     def __init__(self):
